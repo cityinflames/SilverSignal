@@ -44,5 +44,5 @@ def compare(prices):
 
 
 if __name__ == "__main__":
-    default = Path(__file__).parent / "verification" / "silver_usd_2017_2025.csv"
+    default = Path(__file__).parent / "silver_usd_2017_2025.csv"
     compare(pd.read_csv(sys.argv[1] if len(sys.argv) > 1 else default))

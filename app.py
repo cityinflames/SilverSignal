@@ -81,7 +81,7 @@ if view == "Forecast notebook":
                  "baseline_up":"Baseline P(up)"}), hide_index=True)
     st.download_button("Export notebook CSV", rows.to_csv(index=False), "silversignal_notebook.csv", "text/csv")
     st.stop()
-source = st.sidebar.radio("Price history source", ["Yahoo silver futures", "Upload daily CSV"], index=0)
+source = st.sidebar.radio("Price history source", ["Yahoo silver futures", "Bundled silver history (2017–2025)", "Upload daily CSV"], index=0)
 period = st.sidebar.selectbox("Download history", ["10y", "5y", "max"], index=0,
                               disabled=source != "Yahoo silver futures")
 uploaded = None
@@ -116,7 +116,12 @@ if source == "Upload daily CSV" and uploaded is None:
 
 try:
     with st.spinner("Loading market history and running chronological backtest..."):
-        prices = cached_yahoo(period) if source == "Yahoo silver futures" else load_csv(uploaded.getvalue())
+        if source == "Yahoo silver futures":
+            prices = cached_yahoo(period)
+        elif source == "Upload daily CSV":
+            prices = load_csv(uploaded.getvalue())
+        else:
+            prices = load_csv(Path(__file__).with_name("silver_usd_2017_2025.csv").read_bytes())
         if source == "Yahoo silver futures":
             # A provider can publish a partial daily bar. Only use prior calendar dates.
             market_day = pd.Timestamp.now(tz="America/New_York").date()
@@ -155,7 +160,8 @@ m3.metric(f"PROJECTED / {horizon} SESSIONS", f"${result.predicted_price:,.2f}",
 st.markdown(f"**Indicative 10th–90th percentile range**  "
             f"USD {result.lower_price:,.2f} to USD {result.upper_price:,.2f}")
 st.caption(f"Data through {result.last_date:%b %d, %Y} · "+
-           ("Yahoo SI=F delayed front-month silver futures" if source == "Yahoo silver futures" else "Your uploaded CSV")+
+           ("Yahoo SI=F delayed front-month silver futures" if source == "Yahoo silver futures" else
+            "Your uploaded CSV" if source == "Upload daily CSV" else "Exchange-Rates.org historical silver archive (2017–2025)")+
            " · All dollar prices are per troy ounce if your source is quoted that way. Forecasts are experimental.")
 
 tab1, tab2, tab3 = st.tabs(["Price & outlook", "Did the model work?", "Method & limitations"])
